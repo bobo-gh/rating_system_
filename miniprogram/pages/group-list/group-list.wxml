@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="group-list">
+    <block wx:if="{{groups.length}}">
+      <view class="group-item" 
+            wx:for="{{groups}}" 
+            wx:key="id"
+            bindtap="goToRate"
+            data-id="{{item.id}}">
+        <view class="name">{{item.name}}</view>
+        <view class="progress-info">
+          <view class="progress-bar">
+            <view class="progress-bar-inner" 
+                  style="width: {{item.scored/item.total*100}}%">
+            </view>
+          </view>
+          <view class="progress-text">
+            已评分: {{item.scored}}/{{item.total}}
+          </view>
+        </view>
+      </view>
+    </block>
+    
+    <view class="empty" wx:else>
+      <view class="empty-icon">📝</view>
+      <view>暂无可评分的分组</view>
+    </view>
+  </view>
+</view> 

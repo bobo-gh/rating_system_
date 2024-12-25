@@ -1,0 +1,48 @@
+/* static/css/styles.css */
+
+/* 增加页面的整体间距 */
+body {
+    padding-top: 70px;
+}
+
+/* 调整表格的字体大小 */
+.table {
+    font-size: 0.9rem;
+}
+
+/* 使表单控件在移动设备上更大 */
+.form-control, .form-select {
+    font-size: 1rem;
+}
+
+/* 优化按钮的间距 */
+.btn {
+    margin-right: 5px;
+}
+.banner img {
+    height: 50px; /* 根据需要调整高度，例如200px */
+    object-fit: cover;
+}
+
+/* 添加登录页面背景 */
+.login-background {
+    background-image: url('/static/images/login_background.jpg'); /* 使用绝对路径 */
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh; /* 确保背景覆盖整个视口高度 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-background .col-md-6 {
+    background-color: rgba(255, 255, 255, 0.8); /* 半透明白色背景以提高表单可读性 */
+    padding: 30px;
+    border-radius: 10px;
+}
+
+/* 为空白单元格添加特定样式 */
+.empty-cell {
+    color: #6c757d; /* 灰色字体 */
+    font-style: italic;
+}

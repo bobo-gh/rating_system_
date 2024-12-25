@@ -1,0 +1,159 @@
+<!-- templates/judge/select_group.html -->
+{% extends "base.html" %}
+
+{% block title %}选择分组 - 评分系统{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+.progress {
+    background: linear-gradient(to right, #f0f2f5, #e9ecef);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+}
+
+.btn-outline-primary {
+    border-width: 2px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    border-color: transparent;
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+}
+
+.page-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.card-title:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    border-radius: 3px;
+}
+
+.badge {
+    padding: 0.5em 1em;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.fa-user-graduate {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 768px) {
+    .row-cols-md-2 {
+        margin: 0 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4 mb-0">选择评分分组</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        {% if groups %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for group in groups %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ group.name }}</h5>
+                        <div class="mb-3">
+                            <div class="small text-muted mb-2">
+                                <i class="fas fa-user-graduate me-1"></i>
+                                成员数：{{ group.members|length }}
+                            </div>
+                            {% set total = group.members|length %}
+                            {% set scored = namespace(count=0) %}
+                            {% for member in group.members %}
+                                {% for score in member.scores %}
+                                    {% if score.judge_id == current_user.id %}
+                                        {% set scored.count = scored.count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% set percentage = (scored.count / total * 100)|round if total > 0 else 0 %}
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar" 
+                                     role="progressbar" 
+                                     style="width: {{ percentage }}%">
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-1">
+                                已评分：{{ scored.count }}/{{ total }}
+                            </div>
+                        </div>
+                        <form method="POST" class="d-grid">
+                            <input type="hidden" name="group" value="{{ group.id }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-chevron-right me-1"></i>
+                                继续评分
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
+            <h5>暂无可评分的分组</h5>
+            <p class="text-muted">请联系管理员分配评分分组。</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

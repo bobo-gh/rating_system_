@@ -1,0 +1,407 @@
+/* 全局样式 */
+body {
+    background: #f8f9fa;
+}
+
+/* 卡片样式 */
+.card {
+    border: none;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* 进度条样式 */
+.progress {
+    background: linear-gradient(to right, #f0f2f5, #e9ecef);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+}
+
+/* 按钮样式 */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #1976D2, #0097A7);
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+}
+
+.btn-outline-primary {
+    border-width: 2px;
+    border-color: #2196F3;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    border-color: transparent;
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+}
+
+/* 页面头部 */
+.page-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 标题样式 */
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.card-title:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    border-radius: 3px;
+}
+
+/* 表格样式 */
+.table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: none;
+    padding: 1rem;
+}
+
+.table tbody tr:hover {
+    background: rgba(33, 150, 243, 0.05);
+}
+
+/* 徽章样式 */
+.badge {
+    padding: 0.5em 1em;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(45deg, #2196F3, #00BCD4) !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(45deg, #4CAF50, #8BC34A) !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(45deg, #FFC107, #FFB300) !important;
+}
+
+.badge.bg-info {
+    background: linear-gradient(45deg, #00BCD4, #03A9F4) !important;
+}
+
+/* 表单样式 */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 0.6rem 1rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+}
+
+/* 图标渐变 */
+.gradient-icon {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .row-cols-md-2 {
+        margin: 0 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+    }
+}
+
+/* 登录页面特殊样式 */
+.login-page {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+.login-card {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* 模态框样式 */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: none;
+    border-radius: 15px 15px 0 0;
+}
+
+/* 导航栏样式 */
+.navbar {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.navbar .nav-link {
+    color: #2c3e50 !important;
+    font-weight: 500;
+    padding: 0.8rem 1rem;
+    transition: all 0.3s;
+}
+
+.navbar .nav-link:hover {
+    color: #2196F3 !important;
+}
+
+.navbar .nav-link .gradient-icon {
+    font-size: 1.1em;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+/* 下拉菜单样式 */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.dropdown-item {
+    padding: 0.7rem 1.2rem;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(45deg, #2196F3, #00BCD4);
+    color: white;
+}
+
+/* 响应式导航栏样式 */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        margin-top: 1rem;
+    }
+
+    .navbar .nav-link {
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+    }
+
+    .navbar .nav-link:hover {
+        background: rgba(33, 150, 243, 0.1);
+    }
+
+    .navbar-nav {
+        margin-bottom: 0.5rem;
+    }
+
+    .navbar .nav-item {
+        width: 100%;
+    }
+
+    .navbar .nav-item + .nav-item {
+        margin-top: 0.25rem;
+    }
+}
+
+/* 移动端页面布局调整 */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 1.5rem 0;
+        margin-bottom: 1.5rem;
+    }
+
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    /* 表格响应式优化 */
+    .table-responsive {
+        margin: 0 -1.25rem;
+        padding: 0 1.25rem;
+    }
+
+    .table td, .table th {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* 按钮组响应式布局 */
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-group .btn {
+        margin: 0.25rem 0;
+        width: 100%;
+    }
+
+    /* 表单元素响应式调整 */
+    .form-control, .form-select {
+        font-size: 16px; /* 防止iOS自动缩放 */
+    }
+
+    .input-group {
+        flex-wrap: nowrap;
+    }
+
+    /* 模态框移动端优化 */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .modal-content {
+        border-radius: 10px;
+    }
+
+    /* 徽章样式调整 */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.8em;
+    }
+
+    /* 进度条高度调整 */
+    .progress {
+        height: 6px;
+    }
+
+    /* 标题样式调整 */
+    .h4, h4 {
+        font-size: 1.25rem;
+    }
+
+    /* 操作按钮组样式 */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+
+/* 移动端导航栏品牌样式 */
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+
+    .navbar-brand .gradient-icon {
+        font-size: 1.2em;
+    }
+}
+
+/* 移动端卡片网格布局 */
+@media (max-width: 768px) {
+    .row-cols-1 {
+        margin: 0;
+    }
+
+    .col {
+        padding: 0.5rem;
+    }
+
+    .card:hover {
+        transform: none;
+    }
+
+    /* 优化表单布局 */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+    }
+
+    /* 优化按钮间距 */
+    .d-flex.gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    /* 优化页面头部按钮 */
+    .page-header .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* 移动端表格滚动优化 */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+    }
+} 

@@ -1,0 +1,102 @@
+/* 搜索栏 */
+.search-bar {
+  margin-bottom: 30rpx;
+}
+
+.search-bar input {
+  background: #fff;
+  padding: 20rpx 30rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+}
+
+/* 成员列表 */
+.member-list {
+  margin-bottom: 120rpx;
+}
+
+.member-item {
+  background: #fff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  border-radius: 16rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.08);
+}
+
+.member-item .info {
+  flex: 1;
+  margin-right: 30rpx;
+}
+
+.member-item .name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.member-item .detail {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.score-input {
+  display: flex;
+  align-items: center;
+}
+
+.score-input input {
+  width: 120rpx;
+  height: 60rpx;
+  border: 2rpx solid #eee;
+  border-radius: 6rpx;
+  text-align: center;
+  margin-right: 20rpx;
+  font-size: 28rpx;
+}
+
+.score {
+  font-size: 32rpx;
+  color: #2196F3;
+  font-weight: bold;
+}
+
+/* 评分进度 */
+.progress-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  padding: 30rpx;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.progress-title {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.progress-bar {
+  height: 8rpx;
+  background: #f0f0f0;
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-bottom: 10rpx;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(45deg, #2196F3, #00BCD4);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 24rpx;
+  color: #666;
+  text-align: center;
+} 

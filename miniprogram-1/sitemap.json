@@ -1,0 +1,7 @@
+{
+    "desc": "小程序评分系统",
+    "rules": [{
+    "action": "allow",
+    "page": "*"
+    }]
+}

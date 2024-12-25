@@ -1,0 +1,186 @@
+<!-- templates/admin/manage_users.html -->
+{% extends "base.html" %}
+
+{% block title %}用户管理 - 评分系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4 mb-0">用户管理</h2>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('upload') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-file-upload me-1"></i>批量导入
+                </a>
+                <a href="{{ url_for('add_user') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>添加用户
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           id="userSearch" 
+                           placeholder="搜索用户名...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="roleFilter">
+                    <option value="">所有角色</option>
+                    <option value="admin">管理员</option>
+                    <option value="judge">评委</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="groupFilter">
+                    <option value="">所有分组</option>
+                    {% for group in groups %}
+                    <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>角色</th>
+                        <th>可评组</th>
+                        <th>评分数</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr data-role="{{ user.role }}" data-groups="{{ user.groups|map(attribute='id')|join(',') }}">
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>
+                            {% if user.role == 'admin' %}
+                            <span class="badge bg-danger">管理员</span>
+                            {% else %}
+                            <span class="badge bg-info">评委</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.groups %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for group in user.groups %}
+                                <span class="badge bg-secondary">{{ group.name }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.role == 'judge' %}
+                            <span class="badge bg-light text-dark border">
+                                {{ user.scores|length }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('edit_user', user_id=user.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmDelete({{ user.id }}, '{{ user.username }}')"
+                                        {% if user.username == 'admin' or user.scores %}disabled{% endif %}>
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                确定要删除用户 <span id="deleteUsername" class="fw-bold"></span> 吗？此操作不可撤销。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 删除确认
+function confirmDelete(userId, username) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    document.getElementById('deleteUsername').textContent = username;
+    form.action = `/admin/delete_user/${userId}`;
+    modal.show();
+}
+
+// 搜索和筛选功能
+const userSearch = document.getElementById('userSearch');
+const roleFilter = document.getElementById('roleFilter');
+const groupFilter = document.getElementById('groupFilter');
+const rows = document.querySelectorAll('#usersTable tbody tr');
+
+function filterTable() {
+    const searchText = userSearch.value.toLowerCase();
+    const roleValue = roleFilter.value;
+    const groupValue = groupFilter.value;
+    
+    rows.forEach(row => {
+        const username = row.cells[1].textContent.toLowerCase();
+        const role = row.dataset.role;
+        const groups = row.dataset.groups.split(',');
+        
+        const matchesSearch = username.includes(searchText);
+        const matchesRole = !roleValue || role === roleValue;
+        const matchesGroup = !groupValue || groups.includes(groupValue);
+        
+        row.style.display = 
+            matchesSearch && matchesRole && matchesGroup ? '' : 'none';
+    });
+}
+
+userSearch.addEventListener('input', filterTable);
+roleFilter.addEventListener('change', filterTable);
+groupFilter.addEventListener('change', filterTable);
+</script>
+{% endblock %}

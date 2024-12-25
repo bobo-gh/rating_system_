@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}数据初始化 - 评分系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4 mb-0">数据初始化</h2>
+            <div>
+                <a href="{{ url_for('download_template', template_type='judge') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-download me-1"></i>评委模板
+                </a>
+                <a href="{{ url_for('download_template', template_type='member') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-1"></i>成员模板
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>警告：</strong> 初始化将删除所有现有数据（除admin用户外），请确保已备份重要数据。
+                    </div>
+                    
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label class="form-label">评委数据文件</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-file-excel"></i>
+                                </span>
+                                <input type="file" name="judge_file" class="form-control" accept=".xlsx" required>
+                            </div>
+                            <div class="form-text">请上传评委Excel文件(.xlsx)</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">被评人数据文件</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-file-excel"></i>
+                                </span>
+                                <input type="file" name="member_file" class="form-control" accept=".xlsx" required>
+                            </div>
+                            <div class="form-text">请上传被评人Excel文件(.xlsx)</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirm('确定要初始化数据吗？此操作不可恢复！')">
+                                <i class="fas fa-sync-alt me-2"></i>开始初始化
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

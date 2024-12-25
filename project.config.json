@@ -1,0 +1,12 @@
+{
+  "miniprogramRoot": "miniprogram-1/",
+  "compileType": "miniprogram",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  },
+  "appid": "你的小程序appid"
+} 

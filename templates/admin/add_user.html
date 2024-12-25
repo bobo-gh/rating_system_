@@ -1,0 +1,198 @@
+<!-- templates/admin/add_user.html -->
+{% extends "base.html" %}
+
+{% block title %}添加用户 - 评分系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4 mb-0">添加用户</h2>
+            <a href="{{ url_for('manage_users') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>返回
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="POST" id="addUserForm">
+                    {{ form.hidden_tag() }}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">用户名</label>
+                                <div class="input-group">
+                                    {{ form.username(class="form-control", placeholder="请输入用户名") }}
+                                    <button type="button" class="btn btn-outline-secondary" id="checkUsername">
+                                        <i class="fas fa-check"></i>检查
+                                    </button>
+                                </div>
+                                <div id="usernameStatus" class="form-text"></div>
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">密码</label>
+                                <div class="input-group">
+                                    {{ form.password(class="form-control", placeholder="请输入密码", type="password") }}
+                                    <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="progress mt-2" style="height: 5px;">
+                                    <div class="progress-bar" id="passwordStrength" role="progressbar"></div>
+                                </div>
+                                <div class="form-text" id="passwordFeedback"></div>
+                                {% for error in form.password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">角色</label>
+                                {{ form.role(class="form-select") }}
+                                {% for error in form.role.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3" id="groups-field">
+                            {{ form.groups.label(class="form-label") }}
+                            {{ form.groups(class="form-select", multiple=True, size=5) }}
+                            <div class="form-text">按住 Ctrl 键可以选择多个分组</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('manage_users') }}" class="btn btn-light">取消</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>保存
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 用户名检查
+document.getElementById('checkUsername').addEventListener('click', function() {
+    const username = document.getElementById('username').value;
+    const statusDiv = document.getElementById('usernameStatus');
+    
+    if (!username) {
+        statusDiv.innerHTML = '<span class="text-danger">请输入用户名</span>';
+        return;
+    }
+    
+    fetch(`/admin/check_username?username=${username}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.available) {
+                statusDiv.innerHTML = '<span class="text-success">用户名可用</span>';
+            } else {
+                statusDiv.innerHTML = '<span class="text-danger">用户名已存在</span>';
+            }
+        });
+});
+
+// 密码显示切换
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const icon = this.querySelector('i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+// 密码强度检查
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strength = checkPasswordStrength(password);
+    const progressBar = document.getElementById('passwordStrength');
+    const feedback = document.getElementById('passwordFeedback');
+    
+    progressBar.style.width = `${strength.score * 25}%`;
+    progressBar.className = `progress-bar bg-${strength.class}`;
+    feedback.innerHTML = strength.message;
+});
+
+function checkPasswordStrength(password) {
+    if (!password) {
+        return { score: 0, class: 'danger', message: '请输入密码' };
+    }
+    
+    let score = 0;
+    let message = [];
+    
+    if (password.length >= 8) score++;
+    else message.push('密码长度至少8位');
+    
+    if (/[A-Z]/.test(password)) score++;
+    else message.push('需包含大写字母');
+    
+    if (/[a-z]/.test(password)) score++;
+    else message.push('需包含小写字母');
+    
+    if (/[0-9]/.test(password)) score++;
+    else message.push('需包含数字');
+    
+    const strengthClasses = ['danger', 'warning', 'info', 'success'];
+    return {
+        score: score,
+        class: strengthClasses[score - 1] || 'danger',
+        message: message.length ? message.join('，') : '密码强度良好'
+    };
+}
+
+// 角色选择联动
+document.getElementById('role').addEventListener('change', function() {
+    const groupsSelect = document.getElementById('groups');
+    if (this.value === 'admin') {
+        groupsSelect.disabled = true;
+        groupsSelect.selectedIndex = -1;
+    } else {
+        groupsSelect.disabled = false;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const groupsField = document.getElementById('groups-field');
+    const groupsSelect = document.getElementById('groups');
+
+    function updateGroupsField() {
+        if (roleSelect.value === 'admin') {
+            groupsField.style.display = 'none';
+            groupsSelect.value = '';  // 清空选择
+            groupsSelect.disabled = true;
+        } else {
+            groupsField.style.display = 'block';
+            groupsSelect.disabled = false;
+        }
+    }
+
+    roleSelect.addEventListener('change', updateGroupsField);
+    updateGroupsField();  // 页面加载时初始化
+});
+</script>
+{% endblock %}
