@@ -1,4 +1,4 @@
-const BASE_URL = 'http://192.168.3.5:4262/api';  // 替换为你的实际API地址
+const BASE_URL = 'http://111.230.96.110:4262/api'; // 替换为你的实际API地址
 
 const request = (url, options = {}) => {
   return new Promise((resolve, reject) => {

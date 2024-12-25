@@ -349,10 +349,19 @@ def initialize_data():
             return redirect(request.url)
 
         try:
-            # 只删除评分记录和成员数据，保留管理员和分组
+            # 首先删除评分记录，因为它依赖于成员和评委
             Score.query.delete()
+            db.session.commit()
+
+            # 删除成员数据
             Member.query.delete()
-            # 只删除评委用户，保留管理员
+            db.session.commit()
+
+            # 清除评委与分组的关联关系
+            db.session.execute(user_groups.delete())
+            db.session.commit()
+
+            # 删除评委用户，但保留管理员
             User.query.filter_by(role='judge').delete()
             db.session.commit()
 
@@ -409,6 +418,9 @@ def initialize_data():
                 flash(f'被评人文件缺少以下必要列：{", ".join(missing_columns)}', 'danger')
                 return redirect(request.url)
 
+            # 将 NaN 值替换为空字符串
+            member_df = member_df.fillna('')
+
             # 获取所有分组
             groups = {str(group.id): group for group in Group.query.all()}
             
@@ -417,7 +429,7 @@ def initialize_data():
             skipped_count = 0
             
             for index, row in member_df.iterrows():
-                # 检查必要字段是否为空
+                # 检查必要字段是否为空（除了notes）
                 if any(pd.isna(row[col]) for col in ['exam_number', 'name', 'school_stage', 'subject', 'group_id']):
                     skipped_count += 1
                     continue
@@ -430,7 +442,7 @@ def initialize_data():
                     flash(f'分组ID "{group_id}" 不存在，请先创建该分组', 'warning')
                     continue
 
-                # 检查成员是否���存在
+                # 检查成员是否已存在
                 if exam_number not in created_members:
                     member = Member.query.filter_by(exam_number=exam_number).first()
                     if not member:
@@ -440,7 +452,7 @@ def initialize_data():
                             school_stage=row['school_stage'],
                             subject=row['subject'],
                             group=groups[group_id],
-                            notes=row.get('notes', '')
+                            notes=str(row['notes']) if row['notes'] != '' else ''  # 确保 notes 是字符串
                         )
                         db.session.add(member)
                         created_members[exam_number] = member
@@ -834,7 +846,7 @@ def upload():
     return render_template('admin/upload.html', form=form)
 
 
-# ------------------ 评委评分功能 ------------------
+# ------------------ ���委评分功能 ------------------
 
 @app.route('/judge/select_group', methods=['GET', 'POST'])
 @login_required
