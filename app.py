@@ -5,6 +5,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from config import Config
 from models import db, User, Group, Member, Score, user_groups
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from forms import LoginForm, UploadForm, UserForm, GroupForm, MemberForm
 import pandas as pd
 import os
@@ -13,22 +14,46 @@ from functools import wraps
 import jwt
 from datetime import datetime, timedelta
 from flask_cors import CORS
+from os import environ
 
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
 db.init_app(app)
 
+# 数据库配置
+app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DATABASE_URL', Config.SQLALCHEMY_DATABASE_URI)
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# JWT token验证装饰器 - 确保这个定义在最前面
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization']
+        
+        if not token:
+            return jsonify({'code': 401, 'msg': '缺少token'}), 401
+        
+        try:
+            data = jwt.decode(token, Config.JWT_SECRET, algorithms=["HS256"])
+            current_user = User.query.get(data['user_id'])
+            if not current_user:
+                return jsonify({'code': 401, 'msg': '无效的token'}), 401
+        except:
+            return jsonify({'code': 401, 'msg': 'token已过期或无效'}), 401
+        
+        return f(current_user, *args, **kwargs)
+    return decorated
 
 # 加载用户
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
 
 # ------------------ 数据库初始化函数 ------------------
 def init_db():
@@ -619,7 +644,7 @@ def upload():
                     
                     # 检查分组是否存在
                     if group_id not in groups:
-                        flash(f'分组ID "{group_id}" 不���在，请先创建该分组', 'warning')
+                        flash(f'分组ID "{group_id}" 不存在，请先创建该分组', 'warning')
                         continue
 
                     # 检查成员是否已存在
@@ -1080,7 +1105,7 @@ def mp_get_groups():
 @app.route('/api/members/<int:group_id>', methods=['GET'])
 @token_required
 def mp_get_members(group_id):
-    """获取指定组的待评��成员"""
+    """获取指定组的待评成员"""
     user = g.current_user
     if not user or user.role != 'judge':
         return jsonify({'code': 1, 'msg': '无权限'})
@@ -1143,38 +1168,3 @@ def mp_submit_score():
     except Exception as e:
         db.session.rollback()
         return jsonify({'code': 1, 'msg': f'评分失败: {str(e)}'})
-
-# Token 验证装饰器
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({'code': 401, 'msg': '未登录'})
-        
-        user_id = verify_token(token)
-        if not user_id:
-            return jsonify({'code': 401, 'msg': '登录已过期'})
-        
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'code': 401, 'msg': '用户不存在'})
-        
-        g.current_user = user
-        return f(*args, **kwargs)
-    return decorated
-
-# Token 生成和验证
-def generate_token(user):
-    payload = {
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=30)
-    }
-    return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-
-def verify_token(token):
-    try:
-        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        return payload['user_id']
-    except:
-        return None

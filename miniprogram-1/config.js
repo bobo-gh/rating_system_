@@ -1,6 +1,6 @@
 const config = {
   // API接口基础路径 - 生产环境
-  baseUrl: 'https://www.tzy.lol',  // 使用你的域名
+  baseUrl: 'https://your-project.vercel.app',  // 替换为你的 Vercel 域名
   
   // API路由
   api: {

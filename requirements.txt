@@ -5,5 +5,7 @@ WTForms==3.0.1
 Flask-SQLAlchemy==3.0.5
 pandas==2.0.3
 xlsxwriter==3.1.0
-JWT
-flask_cors
+PyJWT==2.8.0
+flask_cors==4.0.0
+PyMySQL==1.1.0
+cryptography==41.0.1

@@ -33,7 +33,7 @@ class User(UserMixin, db.Model):
 
     @property
     def scored_count(self):
-        """返回该评委已评分的数量"""
+        """返回该评��已评分的数量"""
         if not self.is_judge:
             return 0
         # 使用 Score 表直接查询数量
