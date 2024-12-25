@@ -21,9 +21,8 @@
     </view>
 
     <button 
-      class="submit-btn"
-      type="primary" 
-      bindtap="onSubmit"
+      class="login-btn"
+      bindtap="onLogin"
       loading="{{loading}}"
     >登录</button>
   </view>

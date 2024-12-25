@@ -1,17 +1,15 @@
 {
   "pages": [
     "pages/login/login",
-    "pages/group-list/group-list",
-    "pages/rate/rate"
+    "pages/index/index",
+    "pages/members/members"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "评分系统",
+    "navigationBarTitleText": "评委评分系统",
     "navigationBarTextStyle": "black"
   },
   "style": "v2",
-  "sitemapLocation": "sitemap.json",
-  "permission": {},
-  "usingComponents": {}
+  "sitemapLocation": "sitemap.json"
 } 

@@ -1,0 +1,41 @@
+<!-- index.wxml -->
+<view class="container">
+  <view class="header">
+    <view class="user-info">
+      <text class="welcome">欢迎，{{userInfo.username}}</text>
+      <text class="role">评委</text>
+    </view>
+    <view class="logout" bindtap="logout">退出登录</view>
+  </view>
+
+  <view class="title-bar">
+    <text class="title">评分分组</text>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 分组列表 -->
+  <view class="group-list" wx:else>
+    <view 
+      class="group-item" 
+      wx:for="{{groups}}" 
+      wx:key="id"
+      bindtap="goToMembers"
+      data-group-id="{{item.id}}"
+    >
+      <view class="group-info">
+        <text class="group-name">{{item.name}}</text>
+        <text class="group-progress">已评分: {{item.scored}}/{{item.total}}</text>
+      </view>
+      <view class="group-arrow">></view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty" wx:if="{{!loading && groups.length === 0}}">
+      <text>暂无可评分的分组</text>
+    </view>
+  </view>
+</view> 

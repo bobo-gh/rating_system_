@@ -28,27 +28,179 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# JWT token验证装饰器 - 确保这个定义在最前面
+# JWT 配置
+JWT_SECRET = os.environ.get('JWT_SECRET', 'generate-a-secure-random-key')
+JWT_ALGORITHM = 'HS256'
+JWT_EXPIRATION_DELTA = timedelta(days=30)
+
+def generate_token(user):
+    """生成 JWT token"""
+    payload = {
+        'user_id': user.id,
+        'exp': datetime.utcnow() + JWT_EXPIRATION_DELTA
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_token(token):
+    """验证 JWT token"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload['user_id']
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+# JWT token验证装饰器
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = None
-        if 'Authorization' in request.headers:
-            token = request.headers['Authorization']
-        
+        token = request.headers.get('Authorization')
         if not token:
-            return jsonify({'code': 401, 'msg': '缺少token'}), 401
+            return jsonify({'code': 401, 'msg': '未登录'}), 401
         
         try:
-            data = jwt.decode(token, Config.JWT_SECRET, algorithms=["HS256"])
+            data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
             current_user = User.query.get(data['user_id'])
             if not current_user:
                 return jsonify({'code': 401, 'msg': '无效的token'}), 401
+            return f(current_user, *args, **kwargs)
         except:
             return jsonify({'code': 401, 'msg': 'token已过期或无效'}), 401
-        
-        return f(current_user, *args, **kwargs)
     return decorated
+
+# ------------------ 小程序 API 接口 ------------------
+@app.route('/api/login', methods=['POST'])
+def mp_login():
+    """小程���登录接口"""
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    user = User.query.filter_by(username=username).first()
+    if user and user.password == password and user.role == 'judge':
+        token = generate_token(user)
+        return jsonify({
+            'code': 0,
+            'msg': '登录成功',
+            'data': {
+                'user_id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'token': token
+            }
+        })
+    elif user and user.password == password and user.role != 'judge':
+        return jsonify({'code': 1, 'msg': '只有评委可以登录小程序'})
+    else:
+        return jsonify({'code': 1, 'msg': '用户名或密码错误'})
+
+@app.route('/api/groups', methods=['GET'])
+@token_required
+def mp_get_groups(current_user):
+    """获取评委可评分的组"""
+    if not current_user or current_user.role != 'judge':
+        return jsonify({'code': 1, 'msg': '无权限'})
+    
+    groups_data = []
+    for group in current_user.groups:
+        total = len(group.members)
+        scored = len([m for m in group.members if Score.query.filter_by(
+            judge_id=current_user.id,
+            member_id=m.id
+        ).first()])
+        groups_data.append({
+            'id': group.id,
+            'name': group.name,
+            'total': total,
+            'scored': scored
+        })
+    
+    return jsonify({
+        'code': 0,
+        'msg': '获取成功',
+        'data': groups_data
+    })
+
+@app.route('/api/members/<int:group_id>', methods=['GET'])
+@token_required
+def mp_get_members(current_user, group_id):
+    """获取指定组的待评成员"""
+    if not current_user or current_user.role != 'judge':
+        return jsonify({'code': 1, 'msg': '无权限'})
+    
+    group = Group.query.get_or_404(group_id)
+    if group not in current_user.groups:
+        return jsonify({'code': 1, 'msg': '无权访问此分组'})
+    
+    members_data = []
+    for member in group.members:
+        score = Score.query.filter_by(
+            judge_id=current_user.id,
+            member_id=member.id
+        ).first()
+        
+        members_data.append({
+            'id': member.id,
+            'exam_number': member.exam_number,
+            'name': member.name,
+            'school_stage': member.school_stage,
+            'subject': member.subject,
+            'score': score.score if score else None
+        })
+    
+    return jsonify({
+        'code': 0,
+        'msg': '获取成功',
+        'data': members_data
+    })
+
+@app.route('/api/score', methods=['POST'])
+@token_required
+def mp_submit_score(current_user):
+    """提交评分"""
+    if not current_user or current_user.role != 'judge':
+        return jsonify({'code': 1, 'msg': '无权限'})
+    
+    data = request.get_json()
+    member_id = data.get('member_id')
+    score_value = data.get('score')
+    
+    if not all([member_id, score_value]):
+        return jsonify({'code': 1, 'msg': '参数不完整'})
+    
+    try:
+        score_value = int(score_value)
+        if not (0 <= score_value <= 100):
+            return jsonify({'code': 1, 'msg': '分数必须在0-100之间'})
+    except ValueError:
+        return jsonify({'code': 1, 'msg': '分数必须为整数'})
+    
+    member = Member.query.get_or_404(member_id)
+    if member.group not in current_user.groups:
+        return jsonify({'code': 1, 'msg': '无权为此成员评分'})
+    
+    # 检查是否已评分
+    existing_score = Score.query.filter_by(
+        judge_id=current_user.id,
+        member_id=member_id
+    ).first()
+    
+    if existing_score:
+        return jsonify({'code': 1, 'msg': '已经评过分了'})
+    
+    try:
+        score = Score(
+            judge_id=current_user.id,
+            member_id=member_id,
+            score=score_value
+        )
+        db.session.add(score)
+        db.session.commit()
+        return jsonify({'code': 0, 'msg': '评分成功'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'code': 1, 'msg': f'评分失败: {str(e)}'})
 
 # 加载用户
 @login_manager.user_loader
@@ -278,7 +430,7 @@ def initialize_data():
                     flash(f'分组ID "{group_id}" 不存在，请先创建该分组', 'warning')
                     continue
 
-                # 检查成员是否已存在
+                # 检查成员是否���存在
                 if exam_number not in created_members:
                     member = Member.query.filter_by(exam_number=exam_number).first()
                     if not member:
@@ -986,9 +1138,9 @@ def export_group_scores(group_id):
 
 if __name__ == '__main__':
     # 初始化数据库并插入模拟数据
-    with app.app_context():
-        if not os.path.exists(os.path.join(app.root_path, 'ratings.db')):
-            init_db()
+    # with app.app_context():
+    #     if not os.path.exists(os.path.join(app.root_path, 'ratings.db')):
+    #         init_db()
     # 创建数据目录和模板文件目录（如果不存在）
     os.makedirs(os.path.join(app.root_path, 'data'), exist_ok=True)
     os.makedirs(os.path.join(app.root_path, 'static', 'templates_files'), exist_ok=True)
@@ -1015,156 +1167,3 @@ def check_username():
     
     existing_user = query.first()
     return jsonify({'available': existing_user is None})
-
-
-# JWT 配置
-JWT_SECRET = os.environ.get('JWT_SECRET', 'generate-a-secure-random-key')
-JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_DELTA = timedelta(days=30)
-
-def generate_token(user):
-    """生成 JWT token"""
-    payload = {
-        'user_id': user.id,
-        'exp': datetime.utcnow() + JWT_EXPIRATION_DELTA
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-def verify_token(token):
-    """验证 JWT token"""
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return payload['user_id']
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
-        return None
-
-def mp_login_required(f):
-    """小程序接口的登录验证装饰器"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({'code': 401, 'msg': '未登录'})
-        
-        user_id = verify_token(token)
-        if not user_id:
-            return jsonify({'code': 401, 'msg': '登录已过期'})
-        
-        g.user_id = user_id
-        return f(*args, **kwargs)
-    return decorated_function
-
-# 添加小程序 API 接口
-@app.route('/api/login', methods=['POST'])
-def mp_login():
-    """小程序登录接口"""
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    
-    user = User.query.filter_by(username=username).first()
-    if user and user.password == password and user.role == 'judge':
-        token = generate_token(user)
-        return jsonify({
-            'code': 0,
-            'msg': '登录成功',
-            'data': {
-                'user_id': user.id,
-                'username': user.username,
-                'token': token
-            }
-        })
-    return jsonify({'code': 1, 'msg': '用户名或密码错误'})
-
-@app.route('/api/groups', methods=['GET'])
-@token_required
-def mp_get_groups():
-    """获取评委可评分的组"""
-    user = g.current_user
-    if not user or user.role != 'judge':
-        return jsonify({'code': 1, 'msg': '无权限'})
-    
-    groups_data = []
-    for group in user.groups:
-        total = len(group.members)
-        scored = len([m for m in group.members if user.has_scored(m.id)])
-        groups_data.append({
-            'id': group.id,
-            'name': group.name,
-            'total': total,
-            'scored': scored
-        })
-    
-    return jsonify({
-        'code': 0,
-        'data': groups_data
-    })
-
-@app.route('/api/members/<int:group_id>', methods=['GET'])
-@token_required
-def mp_get_members(group_id):
-    """获取指定组的待评成员"""
-    user = g.current_user
-    if not user or user.role != 'judge':
-        return jsonify({'code': 1, 'msg': '无权限'})
-    
-    group = Group.query.get_or_404(group_id)
-    if group not in user.groups:
-        return jsonify({'code': 1, 'msg': '无权访问此分组'})
-    
-    members_data = []
-    for member in group.members:
-        score = user.get_score_for(member.id)
-        members_data.append({
-            'id': member.id,
-            'exam_number': member.exam_number,
-            'name': member.name,
-            'school_stage': member.school_stage,
-            'subject': member.subject,
-            'score': score
-        })
-    
-    return jsonify({
-        'code': 0,
-        'data': members_data
-    })
-
-@app.route('/api/score', methods=['POST'])
-@token_required
-def mp_submit_score():
-    """提交评分"""
-    user = g.current_user
-    if not user or user.role != 'judge':
-        return jsonify({'code': 1, 'msg': '无权限'})
-    
-    data = request.get_json()
-    member_id = data.get('member_id')
-    score_value = data.get('score')
-    
-    if not all([member_id, score_value]):
-        return jsonify({'code': 1, 'msg': '参数不完整'})
-    
-    try:
-        score_value = int(score_value)
-        if not (0 <= score_value <= 100):
-            return jsonify({'code': 1, 'msg': '分数必须在0-100之间'})
-    except ValueError:
-        return jsonify({'code': 1, 'msg': '分数必须为整数'})
-    
-    member = Member.query.get_or_404(member_id)
-    if member.group not in user.groups:
-        return jsonify({'code': 1, 'msg': '无权为此成员评分'})
-    
-    if user.has_scored(member_id):
-        return jsonify({'code': 1, 'msg': '已经评过分了'})
-    
-    try:
-        score = Score(judge_id=user.id, member_id=member_id, score=score_value)
-        db.session.add(score)
-        db.session.commit()
-        return jsonify({'code': 0, 'msg': '评分成功'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'code': 1, 'msg': f'评分失败: {str(e)}'})

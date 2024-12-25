@@ -2,36 +2,45 @@
 App({
   globalData: {
     userInfo: null,
-    token: null
+    isLoggedIn: false
   },
 
   onLaunch() {
-    // 检查是否有存储的token
-    const token = wx.getStorageSync('token')
-    if (token) {
-      this.globalData.token = token
-    }
-  },
-
-  // 检查登录状态
-  checkLogin() {
-    const token = wx.getStorageSync('token')
-    if (!token) {
-      wx.redirectTo({
+    // 检查登录状态
+    const token = wx.getStorageSync('token');
+    const userInfo = wx.getStorageSync('userInfo');
+    
+    if (token && userInfo) {
+      this.globalData.isLoggedIn = true;
+      this.globalData.userInfo = userInfo;
+    } else {
+      // 清除可能存在的无效数据
+      wx.removeStorageSync('token');
+      wx.removeStorageSync('userInfo');
+      
+      // 跳转到登录页
+      wx.reLaunch({
         url: '/pages/login/login'
-      })
-      return false
+      });
     }
-    return true
   },
 
-  // 清除登录状态
-  clearLogin() {
-    this.globalData.userInfo = null
-    this.globalData.token = null
-    wx.removeStorageSync('token')
-    wx.redirectTo({
+  // 登录成功后调用
+  login(token, userInfo) {
+    this.globalData.isLoggedIn = true;
+    this.globalData.userInfo = userInfo;
+    wx.setStorageSync('token', token);
+    wx.setStorageSync('userInfo', userInfo);
+  },
+
+  // 登出
+  logout() {
+    this.globalData.isLoggedIn = false;
+    this.globalData.userInfo = null;
+    wx.removeStorageSync('token');
+    wx.removeStorageSync('userInfo');
+    wx.reLaunch({
       url: '/pages/login/login'
-    })
+    });
   }
-}) 
+}); 
