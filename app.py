@@ -15,6 +15,7 @@ import jwt
 from datetime import datetime, timedelta
 from flask_cors import CORS
 from os import environ
+from config import Config # 添加
 
 app = Flask(__name__)
 CORS(app)
@@ -29,15 +30,16 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # JWT 配置
-JWT_SECRET = os.environ.get('JWT_SECRET', 'generate-a-secure-random-key')
+JWT_SECRET = Config.JWT_SECRET_KEY
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_DELTA = timedelta(days=30)
 
 def generate_token(user):
     """生成 JWT token"""
     payload = {
         'user_id': user.id,
-        'exp': datetime.utcnow() + JWT_EXPIRATION_DELTA
+        'username': user.username,
+        'role': user.role,
+        'exp': datetime.utcnow() + timedelta(days=1)  # 设置过期时间为1天
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -68,11 +70,10 @@ def token_required(f):
         except:
             return jsonify({'code': 401, 'msg': 'token已过期或无效'}), 401
     return decorated
-
 # ------------------ 小程序 API 接口 ------------------
 @app.route('/api/login', methods=['POST'])
 def mp_login():
-    """小程���登录接口"""
+    """小程序登录接口"""
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -206,7 +207,6 @@ def mp_submit_score(current_user):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
 # ------------------ 数据库初始化函数 ------------------
 def init_db():
     """

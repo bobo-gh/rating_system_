@@ -110,7 +110,7 @@ FLUSH PRIVILEGES;
 # 创建项目目录
 sudo mkdir -p /var/www/rating_system
 
-# 修改目录所有者为当前用户（替换 your_username 为你的用户名）
+# 修改目录所有者为当前用户（替换 your_username 为你的用户名）无需替换
 sudo chown -R $USER:$USER /var/www/rating_system
 
 # 设置适当的权限
@@ -124,7 +124,7 @@ cd /var/www/rating_system
 #### 创建虚拟环境
 ```bash
 # 创建虚拟环境
-python -m venv venv
+python3 -m venv venv
 
 # 激活虚拟环境
 # Windows
