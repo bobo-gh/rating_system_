@@ -268,7 +268,7 @@ sudo chmod 600 /var/www/rating_system/.env
 mysqldump -u rating_user -p rating_system > backup.sql
 ```
 
-完成以上步骤后，评分系统应该就可以正常运行了。记得定期检查日志，及时发现和解决问题。如果遇到任何问题，可以查看相应的日志文件进行排查。
+如果遇到任何问题，可以查看相应的日志文件进行排查。
 
 
 ## 使用说明
