@@ -3,13 +3,185 @@
 
 {% block title %}评分统计 - 评分系统{% endblock %}
 
+{% block head %}
+{{ super() }}
+<style>
+    :root {
+        --primary-color: #4A90E2;
+        --secondary-color: #F5F7FA;
+        --text-color: #2C3E50;
+        --border-radius: 12px;
+        --transition-speed: 0.3s;
+    }
+
+    body {
+        background-color: var(--secondary-color);
+        color: var(--text-color);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color), #357ABD);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .card {
+        border: none;
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        margin-bottom: 1.5rem;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        padding: 1.25rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all var(--transition-speed);
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+        box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+    }
+
+    .btn-primary:hover {
+        background: #357ABD;
+        box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .btn-outline-primary {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+    }
+
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #E1E8ED;
+        padding: 0.5rem 2.5rem 0.5rem 1rem;
+        font-size: 0.95rem;
+        transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+    }
+
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: #4A5568;
+        border-bottom: 2px solid #E1E8ED;
+    }
+
+    .table td {
+        vertical-align: middle;
+        color: #2D3748;
+        border-bottom: 1px solid #E1E8ED;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.75em;
+        border-radius: 6px;
+    }
+
+    .badge.bg-info {
+        background-color: rgba(74, 144, 226, 0.1) !important;
+        color: var(--primary-color);
+    }
+
+    .badge.bg-secondary {
+        background-color: rgba(45, 55, 72, 0.1) !important;
+        color: #4A5568;
+    }
+
+    .no-data {
+        padding: 4rem 0;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .no-data i {
+        color: #A0AEC0;
+        margin-bottom: 1rem;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 1.5rem 0;
+        }
+
+        .d-flex.gap-2 {
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+
+        .card-header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .table-responsive {
+            margin: 0 -1.25rem;
+        }
+
+        .table th, .table td {
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="h4 mb-0">评分统计</h2>
-            <div class="d-flex gap-2">
-                <form class="d-flex gap-2" method="GET">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <h2 class="h4 mb-3 mb-md-0">评分统计</h2>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('export_scores') }}" class="btn btn-primary">
+                    <i class="fas fa-download me-1"></i>导出全部数据
+                </a>
+                <form class="d-flex gap-2 flex-wrap" method="GET">
                     <select name="stage" class="form-select" onchange="this.form.submit()">
                         <option value="">全部学段</option>
                         {% for stage in stages %}
@@ -35,33 +207,33 @@
 <div class="container">
     {% if data %}
     {% for group_data in data %}
-    <div class="card mb-4">
+    <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{{ group_data.group.name }}</h5>
-            <a href="{{ url_for('export_group_scores', group_id=group_data.group.id) }}" 
+            <a href="{{ url_for('export_scores', group_id=group_data.group.id) }}" 
                class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-download me-1"></i>导出Excel
             </a>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>考号</th>
+                            <th class="ps-4">考号</th>
                             <th>姓名</th>
                             <th>学段</th>
                             <th>学科</th>
                             {% for judge in group_data.judges %}
                             <th>{{ judge.username }}</th>
                             {% endfor %}
-                            <th>平均分</th>
+                            <th class="pe-4">平均分</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for member in group_data.members %}
                         <tr>
-                            <td>{{ member.exam_number }}</td>
+                            <td class="ps-4">{{ member.exam_number }}</td>
                             <td>{{ member.name }}</td>
                             <td>
                                 <span class="badge bg-info">{{ member.school_stage }}</span>
@@ -72,7 +244,7 @@
                             {% for judge in group_data.judges %}
                             <td>{{ member.scores.get(judge.username, '') }}</td>
                             {% endfor %}
-                            <td>
+                            <td class="pe-4">
                                 <strong>{{ member.average if member.average != 'N/A' else '' }}</strong>
                             </td>
                         </tr>
@@ -84,10 +256,10 @@
     </div>
     {% endfor %}
     {% else %}
-    <div class="text-center py-5">
-        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-        <h5>暂无统计数据</h5>
-        <p class="text-muted">请选择其他筛选条件查看。</p>
+    <div class="no-data text-center">
+        <i class="fas fa-chart-bar fa-3x mb-3"></i>
+        <h5 class="mb-2">暂无统计数据</h5>
+        <p class="text-muted mb-0">请选择其他筛选条件查看</p>
     </div>
     {% endif %}
 </div>

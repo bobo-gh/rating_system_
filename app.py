@@ -829,7 +829,7 @@ def upload():
                 db.session.commit()
                 success_count = len(created_members)
                 if success_count > 0:
-                    flash(f'成功导入 {success_count} 条记录', 'success')
+                    flash(f'成���导入 {success_count} 条记录', 'success')
                 if skipped_count > 0:
                     flash(f'跳过 {skipped_count} 条无效记录', 'info')
 
@@ -846,7 +846,7 @@ def upload():
     return render_template('admin/upload.html', form=form)
 
 
-# ------------------ ���委评分功能 ------------------
+# ------------------ 评委评分功能 ------------------
 
 @app.route('/judge/select_group', methods=['GET', 'POST'])
 @login_required
@@ -1036,67 +1036,134 @@ def export_scores():
         flash('无权访问该功能', 'danger')
         return redirect(url_for('index'))
 
-    # Get all group statistics
-    groups = Group.query.all()
-    statistics_data = []
-    for group in groups:
-        judges = group.users.filter_by(role='judge').all()
-        judge_ids = [judge.id for judge in judges]
-        members = group.members
-        group_avg_total = 0
-        group_avg_count = 0
-        member_stats = []
-        for member in members:
-            scores = Score.query.filter(Score.member_id == member.id, Score.judge_id.in_(judge_ids)).all()
-            judge_scores = {score.judge.username: score.score for score in scores}
-            average = sum(judge_scores.values()) / len(judge_scores) if judge_scores else 'N/A'
-            if isinstance(average, float):
-                group_avg_total += average
-                group_avg_count += 1
-            member_stats.append({
-                'exam_number': member.exam_number,
-                'school_stage': member.school_stage,
-                'subject': member.subject,
-                'name': member.name,
-                'notes': member.notes,
-                'scores': judge_scores,
-                'average': round(average, 2) if isinstance(average, float) else average
+    try:
+        # 获取筛选参数
+        group_id = request.args.get('group_id')
+        selected_stage = request.args.get('stage', '')
+        selected_subject = request.args.get('subject', '')
+
+        # 准备数据
+        data = []
+        
+        # 根据group_id筛选组
+        if group_id:
+            groups = [Group.query.get_or_404(group_id)]
+        else:
+            groups = Group.query.all()
+
+        # 获取所有评委
+        all_judges = User.query.filter_by(role='judge').all()
+        
+        for group in groups:
+            # 获取该组的评委
+            group_judges = group.users.filter_by(role='judge').all()
+            judge_ids = [judge.id for judge in group_judges]
+            
+            # 构建成员查询
+            members_query = Member.query.filter_by(group_id=group.id)
+            if selected_stage:
+                members_query = members_query.filter_by(school_stage=selected_stage)
+            if selected_subject:
+                members_query = members_query.filter_by(subject=selected_subject)
+            
+            members = members_query.all()
+
+            for member in members:
+                # 获取该成员的所有评分
+                scores = Score.query.filter_by(member_id=member.id).all()
+                
+                row = {
+                    '分组': group.name,
+                    '考号': member.exam_number,
+                    '姓名': member.name,
+                    '学段': member.school_stage,
+                    '学科': member.subject,
+                    '备注': member.notes or ''
+                }
+
+                total_score = 0
+                score_count = 0
+
+                # 添加所有评委的评分（包括未评分的评委）
+                for judge in all_judges:
+                    score = next((s.score for s in scores if s.judge_id == judge.id), None)
+                    row[f'评委{judge.username}'] = score if score is not None else ''
+                    if score is not None:
+                        total_score += score
+                        score_count += 1
+
+                # 计算平均分
+                row['平均分'] = round(total_score/score_count, 2) if score_count > 0 else ''
+                data.append(row)
+
+        # 如果没有数据，返回提示
+        if not data:
+            flash('没有找到符合条件的评分数据', 'warning')
+            return redirect(url_for('statistics'))
+
+        # 创建 DataFrame
+        df = pd.DataFrame(data)
+
+        # 生成文件名
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        if group_id:
+            group_name = groups[0].name
+            filename = f"{group_name}_评分统计_{timestamp}.xlsx"
+        else:
+            if selected_stage and selected_subject:
+                filename = f"{selected_stage}{selected_subject}_评分统计_{timestamp}.xlsx"
+            elif selected_stage:
+                filename = f"{selected_stage}_评分统计_{timestamp}.xlsx"
+            elif selected_subject:
+                filename = f"{selected_subject}_评分统计_{timestamp}.xlsx"
+            else:
+                filename = f"全部评分统计_{timestamp}.xlsx"
+
+        # 创建Excel文件在内存中
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            # 写入数据
+            df.to_excel(writer, index=False, sheet_name='评分统计')
+            
+            # 获取工作表
+            workbook = writer.book
+            worksheet = writer.sheets['评分统计']
+            
+            # 设置格式
+            header_format = workbook.add_format({
+                'bold': True,
+                'align': 'center',
+                'valign': 'vcenter',
+                'bg_color': '#f0f0f0'
             })
-        group_average = round(group_avg_total / group_avg_count, 2) if group_avg_count > 0 else 'N/A'
-        statistics_data.append({
-            'group': group,
-            'judges': judges,
-            'members': member_stats,
-            'group_average': group_average
-        })
+            
+            # 设置表头格式
+            for col_num, value in enumerate(df.columns.values):
+                worksheet.write(0, col_num, value, header_format)
+            
+            # 设置列宽
+            for idx, col in enumerate(df.columns):
+                max_length = max(
+                    df[col].astype(str).apply(len).max(),
+                    len(str(col))
+                ) + 2
+                worksheet.set_column(idx, idx, max_length)
 
-    # Create a DataFrame for all groups
-    all_data = []
-    for group_data in statistics_data:
-        group = group_data['group']
-        judges = group_data['judges']
-        members = group_data['members']
-        for member in members:
-            row = {
-                '群组': group.name,
-                '考号': member['exam_number'],
-                '学段': member['school_stage'],
-                '学科': member['subject'],
-                '姓名': member['name'],
-                '备注': member['notes']
-            }
-            # Add judges' scores
-            for judge in judges:
-                row[judge.username] = member['scores'].get(judge.username, 'N/A')
-            row['平均分'] = member['average']
-            all_data.append(row)
+            # 添加筛选
+            worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
 
-    df = pd.DataFrame(all_data)
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='All_Scores')
-    output.seek(0)
-    return send_file(output, download_name="all_scores.xlsx", as_attachment=True)
+        output.seek(0)
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        app.logger.error(f"Export error: {str(e)}")
+        flash(f'导出失败: {str(e)}', 'danger')
+        return redirect(url_for('statistics'))
 
 
 @app.route('/admin/export_group_scores/<int:group_id>')

@@ -1,7 +1,7 @@
 # models.py
 
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
@@ -24,6 +24,7 @@ class User(UserMixin, db.Model):
                            lazy='dynamic',
                            backref=db.backref('users', lazy='dynamic'))
     scores = db.relationship('Score', backref='judge', lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow) 
     def set_password(self, password):
         self.password = generate_password_hash(password)
         
