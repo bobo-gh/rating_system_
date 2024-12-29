@@ -8,124 +8,142 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h2 class="h4 mb-0">{{ group.name }} - 评分</h2>
-                <p class="text-muted small mb-0">请为每位成员打分（0-100分）</p>
+                <h2 class="h4 mb-2">{{ group.name }} - 评分</h2>
+                <div class="text-white opacity-75 small">
+                    <i class="fas fa-info-circle me-1"></i>评分说明：
+                    <ul class="mb-0 mt-1 small">
+                        <li>请为每位成员评定0-100分的分数</li>
+                        <li>分数提交后不可修改，请认真评分</li>
+                        <li>可使用搜索功能快速查找成员</li>
+                    </ul>
+                </div>
             </div>
-            <a href="{{ url_for('select_group') }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('select_group') }}" class="btn btn-outline-light">
                 <i class="fas fa-arrow-left me-1"></i>返回选择
             </a>
         </div>
     </div>
 </div>
 
-<div class="mb-3">
-    <div class="input-group">
-        <span class="input-group-text">
-            <i class="fas fa-search"></i>
-        </span>
-        <input type="text" 
-               class="form-control" 
-               id="memberSearch" 
-               placeholder="搜索考号或姓名...">
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-body">
-        <form method="POST">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>考号</th>
-                            <th>姓名</th>
-                            <th>学段</th>
-                            <th>学科</th>
-                            <th style="width: 200px;">分数</th>
-                            <th>状态</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for member in members %}
-                        {% set existing_score = member.scores|selectattr('judge_id', 'equalto', current_user.id)|first %}
-                        <tr>
-                            <td>{{ member.exam_number }}</td>
-                            <td>{{ member.name }}</td>
-                            <td>
-                                <span class="badge bg-info">{{ member.school_stage }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ member.subject }}</span>
-                            </td>
-                            <td>
-                                {% if member.id in member_scores %}
-                                <div class="input-group">
-                                    <input type="number" 
-                                           class="form-control text-center" 
-                                           value="{{ member_scores[member.id] }}" 
-                                           disabled>
-                                    <span class="input-group-text">分</span>
-                                </div>
-                                {% else %}
-                                <div class="input-group">
-                                    <input type="number" 
-                                           name="score_{{ member.id }}" 
-                                           class="form-control text-center" 
-                                           min="0" 
-                                           max="100" 
-                                           placeholder="0-100"
-                                           required>
-                                    <span class="input-group-text">分</span>
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if existing_score %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>已评分
-                                </span>
-                                {% else %}
-                                <span class="badge bg-warning text-dark">
-                                    <i class="fas fa-clock me-1"></i>待评分
-                                </span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="d-flex justify-content-center mt-4">
-                <button type="submit" class="btn btn-primary btn-lg px-5">
-                    <i class="fas fa-save me-2"></i>提交评分
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card mt-4">
-    <div class="card-body">
-        <h6 class="card-title">评分进度</h6>
-        {% set total = current_user.total_to_score %}
-        {% set scored = current_user.scored_count %}
-        {% set percentage = (scored / total * 100)|round if total > 0 else 0 %}
-        <div class="progress mb-2">
-            <div class="progress-bar" 
-                 role="progressbar" 
-                 style="width: {{ percentage }}%"
-                 aria-valuenow="{{ percentage }}" 
-                 aria-valuemin="0" 
-                 aria-valuemax="100">
-                {{ percentage }}%
+<div class="container">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" 
+                       class="form-control" 
+                       id="memberSearch" 
+                       placeholder="输入考号或姓名搜索...">
             </div>
         </div>
-        <div class="small text-muted text-center">
-            已评分 {{ scored }}/{{ total }} 人
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">成员评分表</h5>
+        </div>
+        <div class="card-body p-0">
+            <form method="POST">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>考号</th>
+                                <th>姓名</th>
+                                <th>学段</th>
+                                <th>学科</th>
+                                <th style="width: 200px;">分数</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            {% set existing_score = member.scores|selectattr('judge_id', 'equalto', current_user.id)|first %}
+                            <tr>
+                                <td>{{ member.exam_number }}</td>
+                                <td>{{ member.name }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ member.school_stage }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ member.subject }}</span>
+                                </td>
+                                <td>
+                                    {% if member.id in member_scores %}
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control text-center" 
+                                               value="{{ member_scores[member.id] }}" 
+                                               disabled>
+                                        <span class="input-group-text">分</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               name="score_{{ member.id }}" 
+                                               class="form-control text-center score-input" 
+                                               min="0" 
+                                               max="100" 
+                                               placeholder="输入0-100的分数"
+                                               title="请输入0到100之间的整数分数"
+                                               required>
+                                        <span class="input-group-text">分</span>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if existing_score %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>已评分
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock me-1"></i>待评分
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>分数提交后将无法修改，请仔细核对
+                        </div>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>提交评分
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title h6 mb-3">评分进度</h5>
+            {% set total = current_user.total_to_score %}
+            {% set scored = current_user.scored_count %}
+            {% set percentage = (scored / total * 100)|round if total > 0 else 0 %}
+            <div class="progress mb-2" style="height: 10px;">
+                <div class="progress-bar" 
+                     role="progressbar" 
+                     style="width: {{ percentage }}%"
+                     aria-valuenow="{{ percentage }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="small text-muted text-center">
+                已完成评分：{{ scored }}/{{ total }} 人（{{ percentage }}%）
+            </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -145,10 +163,22 @@ document.getElementById('memberSearch').addEventListener('input', function(e) {
 });
 
 // 自动保存草稿
-const inputs = document.querySelectorAll('input[type="number"]');
+const inputs = document.querySelectorAll('.score-input');
 inputs.forEach(input => {
+    // 添加输入提示
+    input.addEventListener('focus', function() {
+        this.setAttribute('placeholder', '');
+    });
+    
+    input.addEventListener('blur', function() {
+        this.setAttribute('placeholder', '输入0-100的分数');
+    });
+
+    // 保存草稿
     input.addEventListener('change', function() {
-        localStorage.setItem(input.name, input.value);
+        if (this.value >= 0 && this.value <= 100) {
+            localStorage.setItem(input.name, input.value);
+        }
     });
     
     // 恢复草稿
@@ -159,10 +189,30 @@ inputs.forEach(input => {
 });
 
 // 提交时清除草稿
-document.querySelector('form').addEventListener('submit', function() {
+document.querySelector('form').addEventListener('submit', function(e) {
+    // 验证所有分数
+    let isValid = true;
     inputs.forEach(input => {
+        const value = parseInt(input.value);
+        if (isNaN(value) || value < 0 || value > 100) {
+            isValid = false;
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
         localStorage.removeItem(input.name);
     });
+
+    if (!isValid) {
+        e.preventDefault();
+        alert('请确保所有分数都在0-100分之间');
+        return false;
+    }
+
+    if (!confirm('提交后分数将无法修改，是否确认提交？')) {
+        e.preventDefault();
+        return false;
+    }
 });
 
 // 数字输入验证
@@ -175,7 +225,25 @@ inputs.forEach(input => {
             if (value < 0) this.value = 0;
             if (value > 100) this.value = 100;
         }
+        
+        // 添加视觉反馈
+        if (this.value === '' || (value >= 0 && value <= 100)) {
+            this.classList.remove('is-invalid');
+        } else {
+            this.classList.add('is-invalid');
+        }
     });
 });
 </script>
+
+<style>
+.score-input::-webkit-inner-spin-button, 
+.score-input::-webkit-outer-spin-button { 
+    -webkit-appearance: none;
+    margin: 0;
+}
+.score-input {
+    -moz-appearance: textfield;
+}
+</style>
 {% endblock %}
