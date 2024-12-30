@@ -1,6 +1,6 @@
 const config = {
   // API接口基础路径
-  baseUrl: 'http://111.230.96.110:4262/api',  // 使用IP地址和端口
+  baseUrl: 'https://www.aibobo.tech/api',  // 生产环境使用HTTPS域名
 
   // API路由
   api: {
