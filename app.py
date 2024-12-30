@@ -15,15 +15,43 @@ import jwt
 from datetime import datetime, timedelta
 from flask_cors import CORS
 from os import environ
-from config import Config # 添加
+from dotenv import load_dotenv
+import logging
+from logging.handlers import RotatingFileHandler
 
+# 加载环境变量
+load_dotenv()
+
+# 创建 Flask 应用
 app = Flask(__name__)
-CORS(app)
 app.config.from_object(Config)
-db.init_app(app)
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+handler = RotatingFileHandler('flask_app.log', maxBytes=10000000, backupCount=5)
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+app.logger.addHandler(handler)
 
 # 数据库配置
 app.config['SQLALCHEMY_DATABASE_URI'] = environ.get('DATABASE_URL', Config.SQLALCHEMY_DATABASE_URI)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 初始化扩展
+db.init_app(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["*"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"]
+    }
+})
+
+# 确保所有数据库操作都在应用上下文中执行
+with app.app_context():
+    # 创建所有表
+    db.create_all()
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -41,7 +69,11 @@ def generate_token(user):
         'role': user.role,
         'exp': datetime.utcnow() + timedelta(days=1)  # 设置过期时间为1天
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    # PyJWT >= 2.0.0 返回字符串，< 2.0.0 返回bytes
+    if isinstance(token, bytes):
+        return token.decode('utf-8')
+    return token
 
 def verify_token(token):
     """验证 JWT token"""
@@ -62,54 +94,75 @@ def token_required(f):
             return jsonify({'code': 401, 'msg': '未登录'}), 401
         
         try:
+            # 处理 Bearer token
+            if token.startswith('Bearer '):
+                token = token.split(' ')[1]
+            
             data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
             current_user = User.query.get(data['user_id'])
             if not current_user:
                 return jsonify({'code': 401, 'msg': '无效的token'}), 401
             return f(current_user, *args, **kwargs)
-        except:
-            return jsonify({'code': 401, 'msg': 'token已过期或无效'}), 401
+        except jwt.ExpiredSignatureError:
+            return jsonify({'code': 401, 'msg': 'token已过期'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'code': 401, 'msg': 'token无效'}), 401
+        except Exception as e:
+            return jsonify({'code': 401, 'msg': str(e)}), 401
     return decorated
 # ------------------ 小程序 API 接口 ------------------
 @app.route('/api/login', methods=['POST'])
 def mp_login():
     """小程序登录接口"""
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    
-    user = User.query.filter_by(username=username).first()
-    if user and user.password == password and user.role == 'judge':
-        token = generate_token(user)
-        return jsonify({
-            'code': 0,
-            'msg': '登录成功',
-            'data': {
-                'user_id': user.id,
-                'username': user.username,
-                'role': user.role,
-                'token': token
-            }
-        })
-    elif user and user.password == password and user.role != 'judge':
-        return jsonify({'code': 1, 'msg': '只有评委可以登录小程序'})
-    else:
-        return jsonify({'code': 1, 'msg': '用户名或密码错误'})
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'code': 1, 'msg': '无效的请求数据'})
+            
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'code': 1, 'msg': '用户名和密码不能为空'})
+        
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.password == password and user.role == 'judge':
+            token = generate_token(user)
+            return jsonify({
+                'code': 0,
+                'msg': '登录成功',
+                'data': {
+                    'user_id': user.id,
+                    'username': user.username,
+                    'role': user.role,
+                    'token': token
+                }
+            })
+        elif user and user.password == password and user.role != 'judge':
+            return jsonify({'code': 1, 'msg': '只有评委可以登录小程序'})
+        else:
+            return jsonify({'code': 1, 'msg': '用户名或密码错误'})
+            
+    except Exception as e:
+        app.logger.error(f"Login error: {str(e)}")
+        return jsonify({'code': 1, 'msg': f'登录失败: {str(e)}'})
 
 @app.route('/api/groups', methods=['GET'])
 @token_required
 def mp_get_groups(current_user):
-    """获取评委可评分的组"""
+    """获取评委的分组列表"""
     if not current_user or current_user.role != 'judge':
         return jsonify({'code': 1, 'msg': '无权限'})
     
     groups_data = []
     for group in current_user.groups:
         total = len(group.members)
-        scored = len([m for m in group.members if Score.query.filter_by(
-            judge_id=current_user.id,
-            member_id=m.id
-        ).first()])
+        scored = Score.query.filter(
+            Score.judge_id == current_user.id,
+            Score.member_id.in_([m.id for m in group.members])
+        ).count()
+        
         groups_data.append({
             'id': group.id,
             'name': group.name,
@@ -167,7 +220,8 @@ def mp_submit_score(current_user):
     member_id = data.get('member_id')
     score_value = data.get('score')
     
-    if not all([member_id, score_value]):
+    # 检查参数是否存在
+    if member_id is None or score_value is None:
         return jsonify({'code': 1, 'msg': '参数不完整'})
     
     try:
@@ -829,7 +883,7 @@ def upload():
                 db.session.commit()
                 success_count = len(created_members)
                 if success_count > 0:
-                    flash(f'成���导入 {success_count} 条记录', 'success')
+                    flash(f'成功导入 {success_count} 条记录', 'success')
                 if skipped_count > 0:
                     flash(f'跳过 {skipped_count} 条无效记录', 'info')
 

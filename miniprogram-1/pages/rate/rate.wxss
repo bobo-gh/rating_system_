@@ -2,6 +2,7 @@
   padding: 30rpx;
   background: #f8f9fa;
   min-height: 100vh;
+  padding-bottom: 240rpx;
 }
 
 .member-item {
@@ -42,14 +43,6 @@
   text-align: center;
   margin-right: 20rpx;
   font-size: 28rpx;
-}
-
-.score-input button {
-  height: 60rpx;
-  line-height: 60rpx;
-  font-size: 26rpx;
-  margin: 0;
-  background: linear-gradient(45deg, #2196F3, #00BCD4);
 }
 
 .score {
@@ -125,7 +118,6 @@
   border: 2rpx solid #eee;
   border-radius: 6rpx;
   text-align: center;
-  margin-right: 20rpx;
   font-size: 28rpx;
 }
 
@@ -170,4 +162,30 @@
   font-size: 24rpx;
   color: #666;
   text-align: center;
+  margin-bottom: 20rpx;
+}
+
+/* 批量提交按钮 */
+.submit-all-btn {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: linear-gradient(45deg, #2196F3, #00BCD4);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 8rpx;
+  margin-top: 20rpx;
+}
+
+.submit-all-btn[disabled] {
+  opacity: 0.6;
+  background: #ccc;
+}
+
+/* 提示文本 */
+.tip-text {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+  margin-top: 16rpx;
 } 

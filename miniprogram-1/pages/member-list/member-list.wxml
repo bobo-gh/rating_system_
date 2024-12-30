@@ -1,0 +1,53 @@
+<!--pages/member-list/member-list.wxml-->
+<view class="container">
+  <view class="search-box">
+    <input type="text" placeholder="搜索号码或姓名..." bindinput="onSearch"/>
+  </view>
+
+  <view class="member-list" wx:if="{{!loading}}">
+    <block wx:for="{{filteredMembers}}" wx:key="id">
+      <view class="member-item">
+        <view class="member-info">
+          <view class="member-name">{{item.name}}</view>
+          <view class="member-number">{{item.exam_number}} | {{item.school_stage}} | {{item.subject}}</view>
+        </view>
+        <view class="score-input">
+          <input 
+            type="number" 
+            value="{{item.score !== null ? item.score : item.tempScore}}"
+            placeholder="0-100" 
+            maxlength="3"
+            disabled="{{item.score !== null}}"
+            bindinput="onScoreInput"
+            data-index="{{index}}"
+          />
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="progress-section">
+    <view class="progress-text">评分进度</view>
+    <view class="progress-bar">
+      <view class="progress-inner" style="width: {{progressPercent}}%"></view>
+    </view>
+    <view class="progress-info">已评分: {{scoredCount}}/{{totalCount}} ({{progressPercent}}%)</view>
+  </view>
+
+  <view class="submit-section">
+    <button 
+      class="submit-all-btn {{isAllScored || allSubmitted ? 'disabled' : ''}}" 
+      bindtap="submitAllScores" 
+      disabled="{{isAllScored || allSubmitted || !hasUnsavedScores}}"
+    >提交全部评分</button>
+    <view class="submit-tip">* 评分提交后将无法修改，请仔细核对</view>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && filteredMembers.length === 0}}">
+    <text>暂无成员数据</text>
+  </view>
+</view>

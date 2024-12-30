@@ -23,7 +23,7 @@
       class="group-item" 
       wx:for="{{groups}}" 
       wx:key="id"
-      bindtap="goToMembers"
+      bindtap="goToRate"
       data-group-id="{{item.id}}"
     >
       <view class="group-info">

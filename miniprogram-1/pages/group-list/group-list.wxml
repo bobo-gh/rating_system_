@@ -1,28 +1,26 @@
 <view class="container">
-  <view class="group-list">
-    <block wx:if="{{groups.length}}">
-      <view class="group-item" 
-            wx:for="{{groups}}" 
-            wx:key="id"
-            bindtap="goToRate"
-            data-id="{{item.id}}">
-        <view class="name">{{item.name}}</view>
-        <view class="progress-info">
-          <view class="progress-bar">
-            <view class="progress-bar-inner" 
-                  style="width: {{item.scored/item.total*100}}%">
-            </view>
-          </view>
-          <view class="progress-text">
-            已评分: {{item.scored}}/{{item.total}}
-          </view>
+  <view class="header">
+    <text class="title">分组列表</text>
+    <button class="logout-btn" bindtap="handleLogout">退出登录</button>
+  </view>
+
+  <view class="group-list" wx:if="{{!loading}}">
+    <block wx:for="{{groups}}" wx:key="id">
+      <view class="group-item" bindtap="goToMembers" data-group-id="{{item.id}}">
+        <view class="group-info">
+          <text class="group-name">{{item.name}}</text>
+          <text class="group-status">{{item.scored ? '已评分' : '未评分'}}</text>
         </view>
+        <view class="group-arrow">></view>
       </view>
     </block>
-    
-    <view class="empty" wx:else>
-      <view class="empty-icon">📝</view>
-      <view>暂无可评分的分组</view>
-    </view>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && groups.length === 0}}">
+    <text>暂无分组数据</text>
   </view>
 </view> 

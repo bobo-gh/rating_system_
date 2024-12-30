@@ -1,13 +1,14 @@
 const config = {
-  // API接口基础路径 - 生产环境
-  baseUrl: 'https://your-project.vercel.app',  // 替换为你的 Vercel 域名
-  
+  // API接口基础路径
+  baseUrl: 'http://111.230.96.110:4262/api',  // 使用IP地址和端口
+
   // API路由
   api: {
-    login: '/api/login',
-    groups: '/api/groups',
-    members: '/api/members',
-    score: '/api/score'
+    login: '/login',
+    groups: '/groups',
+    members: '/members',
+    score: '/score',
+    submitAllScores: '/submit_all_scores'
   }
 }
 

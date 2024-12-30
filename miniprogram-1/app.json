@@ -2,12 +2,13 @@
   "pages": [
     "pages/login/login",
     "pages/index/index",
-    "pages/members/members"
+    "pages/group-list/group-list",
+    "pages/member-list/member-list"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "评委评分系统",
+    "navigationBarTitleText": "评分系统",
     "navigationBarTextStyle": "black"
   },
   "style": "v2",

@@ -11,8 +11,8 @@
 
   <!-- 成员列表 -->
   <view class="member-list">
-    <block wx:if="{{members.length}}">
-      <view class="member-item" wx:for="{{members}}" wx:key="id">
+    <block wx:if="{{filteredMembers.length}}">
+      <view class="member-item" wx:for="{{filteredMembers}}" wx:key="id">
         <view class="info">
           <view class="name">{{item.name}}</view>
           <view class="detail">
@@ -20,7 +20,7 @@
           </view>
         </view>
 
-        <block wx:if="{{!item.score}}">
+        <block wx:if="{{item.score === null || item.score === undefined}}">
           <view class="score-input">
             <input
               type="number"
@@ -29,13 +29,6 @@
               bindinput="onScoreInput"
               data-id="{{item.id}}"
             />
-            <button 
-              size="mini"
-              type="primary"
-              bindtap="submitScore"
-              data-id="{{item.id}}"
-              loading="{{submitting[item.id]}}"
-            >提交</button>
           </view>
         </block>
         <view class="score" wx:else>
@@ -61,6 +54,22 @@
     </view>
     <view class="progress-text">
       已评分: {{scored}}/{{total}} ({{progress}}%)
+    </view>
+
+    <!-- 批量提交按钮 -->
+    <button 
+      class="submit-all-btn"
+      type="primary" 
+      bindtap="submitAllScores"
+      loading="{{submitting}}"
+      disabled="{{!hasNewScores}}"
+    >
+      提交全部评分
+    </button>
+
+    <!-- 提示文本 -->
+    <view class="tip-text">
+      * 评分提交后将无法修改，请仔细核对
     </view>
   </view>
 </view> 

@@ -11,32 +11,21 @@ App({
     const userInfo = wx.getStorageSync('userInfo');
     
     if (token && userInfo) {
-      this.globalData.isLoggedIn = true;
       this.globalData.userInfo = userInfo;
-    } else {
-      // 清除可能存在的无效数据
-      wx.removeStorageSync('token');
-      wx.removeStorageSync('userInfo');
-      
-      // 跳转到登录页
-      wx.reLaunch({
-        url: '/pages/login/login'
-      });
+      this.globalData.isLoggedIn = true;
     }
   },
 
-  // 登录成功后调用
   login(token, userInfo) {
-    this.globalData.isLoggedIn = true;
     this.globalData.userInfo = userInfo;
+    this.globalData.isLoggedIn = true;
     wx.setStorageSync('token', token);
     wx.setStorageSync('userInfo', userInfo);
   },
 
-  // 登出
   logout() {
-    this.globalData.isLoggedIn = false;
     this.globalData.userInfo = null;
+    this.globalData.isLoggedIn = false;
     wx.removeStorageSync('token');
     wx.removeStorageSync('userInfo');
     wx.reLaunch({
