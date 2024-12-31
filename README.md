@@ -93,6 +93,23 @@ CREATE USER 'rating_user'@'localhost' IDENTIFIED BY '你设置的密码';
 GRANT ALL PRIVILEGES ON rating_system.* TO 'rating_user'@'localhost';
 FLUSH PRIVILEGES;
 exit;
+
+# 数据库进行初始化在mysql shell下运行项目目录下的create_database.sql
+# 切换到项目目录
+cd /var/www/rating_system
+
+# 使用MySQL命令执行SQL文件
+sudo mysql -u root -p rating_system < create_database.sql
+# 验证数据库是否创建成功
+# 登录MySQL
+mysql -u rating_user -p
+
+# 在MySQL中执行以下命令
+use rating_system;
+show tables;  # 查看是否创建了所有表
+select * from user;  # 检查管理员用户是否创建成功
+exit;
+
 ```
 
 ### 5. 配置环境变量
@@ -143,6 +160,8 @@ WantedBy=multi-user.target
 
 启动服务：
 ```bash
+# 重新加载 systemd 配置
+sudo systemctl daemon-reload
 sudo systemctl start rating_system
 sudo systemctl enable rating_system
 ```
@@ -237,6 +256,20 @@ sudo chown -R www-data:www-data /var/www/rating_system
 sudo chmod -R 755 /var/www/rating_system
 ```
 
+### 10、访问测试
+
+- 在浏览器访问 `http://服务器IP:4262` 应该能看到管理后台登录界面
+- 默认管理员账号：
+  - 用户名：`admin`
+  - 密码：`admin123`
+
+### 11、小程序配置
+
+- 在微信开发者工具中：
+  - 点击右上角【详情】
+  - 在【本地设置】中勾选【不校验合法域名...】选项
+  - 这样可以在开发阶段使用 IP 地址
+
 ## 问题总结与解决方案
 
 ### 1. 跨域问题
@@ -262,6 +295,27 @@ sudo chmod -R 755 /var/www/rating_system
 ### 6. 文件上传安全问题
 - 问题：文件上传可能带来安全隐患
 - 解决：严格限制文件类型，使用安全的文件名生成方式
+- 6. 文件上传安全问题
+
+### 7. 常用的操作命令
+
+```bash
+# 赋予权限
+sudo chmod -R 777 /var/www/rating_system/*
+# 删除
+rm /var/www/rating_system/rating_system.tar
+# 更改路径写的权限 为所有者添加写权限
+chmod u+w /var/www/rating_system
+# 为所有者、组用户和其他用户添加写权限
+chmod a+w /var/www/rating_system
+# 打包/var/www/rating_system 将此目录下的venv目录除外
+tar --exclude=venv -cvf rating_system.tar /var/www/rating_system
+# 强制删除目录
+rm -rf /var/www/rating_system
+# 将压缩文件解压到指定目录
+sudo apt-get install p7zip-full
+7z x rating_system.7z
+```
 
 ## 维护建议
 
