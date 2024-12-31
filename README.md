@@ -1,73 +1,81 @@
-# 评委评分系统功能介绍及部署指南
+# 评分系统（Rating System）
 
-## 目录
-- [系统概述](#系统概述)
-- [技术架构](#技术架构)
-- [部署步骤](#部署步骤)
-  - [后端部署](#后端部署)
-  - [数据库配置](#数据库配置)
-  - [小程序部署](#小程序部署)
-- [系统配置](#系统配置)
-- [使用说明](#使用说明)
-- [常见问题](#常见问题)
+## 项目介绍
 
-## 系统概述
-
-评委评分系统是一个基于Python Flask后端和微信小程序前端的评分管理平台，使用MySQL数据库存储数据。系统支持多评委分组评分，实时统计分数，导出评分数据等功能。
+这是一个基于Flask和微信小程序的评分系统，主要用于组织评委对参评人员进行打分评估。系统分为Web管理端和微信小程序评委端两部分。
 
 ### 主要功能
-- 评委账号管理
-- 分组管理
-- 评分管理
-- 数据导出
-- 成绩统计
 
-## 技术架构
+#### Web管理端
+- 用户管理：管理员可以添加、编辑、删除评委账号
+- 分组管理：创建和管理不同的评分分组
+- 成员管理：添加、编辑、删除待评分成员
+- 数据导入：支持Excel批量导入评委和待评分成员数据
+- 评分统计：查看所有评分数据，支持按学段、学科筛选
+- 数据导出：支持导出评分统计数据到Excel
 
-### 后端技术栈
-- Python 3.8+
-- Flask 2.3.3
-- MySQL 5.7+
-- Flask-SQLAlchemy
-- Flask-Login
-- JWT认证
+#### 小程序评委端
+- 评委登录：评委使用账号密码登录
+- 分组查看：查看自己所在的评分分组
+- 评分功能：对分组内的成员进行打分
+- 评分进度：实时显示评分进度
 
-### 前端技术栈
-- 微信小程序原生开发
-- WeUI组件库
+## 部署指南
 
-### 系统架构图
-```
-├── 后端服务 (Flask)
-│   ├── 用户认证模块
-│   ├── 数据管理模块
-│   ├── API接口模块
-│   └── 数据统计模块
-├── 数据库服务 (MySQL)
-│   ├── users (用户表)
-│   ├── groups (分组表)
-│   ├── members (成员表)
-│   ├── scores (评分表)
-│   └── user_groups (用户分组关联表)
-└── 小程序端
-    ├── 登录模块
-    ├── 分组显示模块
-    └── 评分模块
-```
+### 1. 服务器环境准备
 
-# 完整的部署步骤
-
-1. **准备工作**
 ```bash
 # 更新系统
 sudo apt update
 sudo apt upgrade -y
 
-# 安装必要的工具
-sudo apt install python3 python3-pip python3-venv mysql-server nginx git -y
+# 安装必要的系统包
+sudo apt install -y python3-pip python3-venv nginx mysql-server mysql-client libmysqlclient-dev
+
+# 安装SSL所需的包
+sudo apt install -y certbot python3-certbot-nginx
 ```
 
-2. **配置 MySQL**
+### 2. 创建项目目录和虚拟环境
+
+```bash
+# 创建项目目录
+sudo mkdir -p /var/www/rating_system
+cd /var/www/rating_system
+
+# 创建并激活Python虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+
+# 创建项目所需目录
+#这里直接上传项目整个目录压缩文件
+```
+
+### 3. 项目文件部署
+
+项目文件压缩之前导出所用模块，可参考
+
+```python
+# 这里注意项目打包时，导出完整的模块： 激活本地项目的虚拟环境，在项目目录下导出模块， 虽然这样有时程序运行好似还缺模块，根据错误提示再pip一下
+E:\rating_system\.venv\Scripts>activate.bat
+pip freeze > requirements.txt
+```
+
+将项目压缩
+
+```bash
+# 上传项目文件压缩包，将项目文件压缩文件解压到指定目录
+sudo apt-get install p7zip-full
+7z x rating_system.7z
+# 安装项目依赖
+pip install -r requirements.txt
+pip install gunicorn
+```
+
+
+
+### 4. 配置`MySQL`数据库
+
 ```bash
 # 启动 MySQL
 sudo systemctl start mysql
@@ -87,28 +95,10 @@ FLUSH PRIVILEGES;
 exit;
 ```
 
-3. **部署项目**
+### 5. 配置环境变量
+
 ```bash
-# 创建项目目录
-sudo mkdir -p /var/www/rating_system
-sudo chown -R $USER:$USER /var/www/rating_system
-cd /var/www/rating_system
-
-# 克隆项目 克隆太慢，不如直接上传
-sudo git clone https://github.com/bobo-gh/rating_system_.git .
-
-# 创建虚拟环境
-python3 -m venv venv
-source venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
-pip install gunicorn
-```
-
-4. **配置环境变量**
-```bash
-# 创建 .env 文件
+# 项目根目录下创建.env文件
 cd /var/www/rating_system
 vim .env
 
@@ -116,7 +106,7 @@ vim .env
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=rating_user
-MYSQL_PASSWORD=你设置的密码
+MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=rating_system
 JWT_SECRET=your_jwt_secret_key
 SECRET_KEY=your_flask_secret_key
@@ -125,12 +115,15 @@ SECRET_KEY=your_flask_secret_key
 chmod 600 .env
 ```
 
-5. **配置 Gunicorn 服务**
-```bash
-# 创建服务文件
-sudo vim /etc/systemd/system/rating_system.service
+### 6. 配置`Gunicorn`
 
-# 添加以下内容（替换 ubuntu 为你的用户名）
+创建`Gunicorn`服务文件：
+```bash
+sudo vim /etc/systemd/system/rating_system.service
+```
+
+服务文件内容：
+```ini
 [Unit]
 Description=Rating System Gunicorn Service
 After=network.target
@@ -145,248 +138,179 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
+                              
+```
 
-# 按ESC进入命令模式，:x
-# 启动服务
-sudo systemctl daemon-reload
+启动服务：
+```bash
 sudo systemctl start rating_system
 sudo systemctl enable rating_system
 ```
 
-6. **配置 Nginx**
+### 7. 配置`Nginx`
+
+创建`Nginx`配置文件：
 ```bash
-# 创建 Nginx 配置文件
 sudo vim /etc/nginx/sites-available/rating_system
+```
 
-# 添加以下内容
+配置文件内容：
+```nginx
+# HTTP - 重定向到HTTPS
 server {
-    listen 80;
-    server_name 服务器IP;
-
-    location / {
-        proxy_pass http://127.0.0.1:4262;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
+    listen 80;                                    # 监听80端口（HTTP）
+    server_name www.aibobo.tech aibobo.tech;     # 指定域名，支持带www和不带www的访问
+    return 301 https://$server_name$request_uri;  # 301永久重定向到HTTPS
 }
 
-# 创建符号链接
-sudo ln -s /etc/nginx/sites-available/rating_system /etc/nginx/sites-enabled/
+# HTTPS
+server {
+    listen 443 ssl;                              # 监听443端口，启用SSL
+    server_name www.aibobo.tech aibobo.tech;     # 指定域名
 
-# 测试配置
+    # SSL证书配置
+    ssl_certificate /etc/letsencrypt/live/www.aibobo.tech/fullchain.pem;      # SSL证书文件
+    ssl_certificate_key /etc/letsencrypt/live/www.aibobo.tech/privkey.pem;    # SSL私钥文件
+
+    # SSL安全参数
+    ssl_protocols TLSv1.2 TLSv1.3;               # 只允许TLS 1.2和1.3
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305;  # 加密算法
+    ssl_prefer_server_ciphers on;                # 优先使用服务器的加密算法
+    ssl_session_cache shared:SSL:10m;            # SSL会话缓存
+    ssl_session_timeout 10m;                     # SSL会话超时时间
+
+    # API 路由
+   location / {
+        # 反向代理设置
+        proxy_pass http://127.0.0.1:4262;        # 转发到Flask应用
+        proxy_http_version 1.1;                  # 使用HTTP 1.1
+        proxy_set_header Upgrade $http_upgrade;  # WebSocket支持
+        proxy_set_header Connection 'upgrade';   # WebSocket支持
+        
+        # 请求头设置
+        proxy_set_header Host $host;             # 传递原始主机名
+        proxy_set_header X-Real-IP $remote_addr; # 传递真实IP
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # 传递代理链路
+        proxy_set_header X-Forwarded-Proto $scheme;  # 传递协议类型
+
+        # CORS头部设置
+        add_header 'Access-Control-Allow-Origin' '*' always;          # 允许所有来源
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;  # 允许的HTTP方法
+        add_header 'Access-Control-Allow-Headers' 'DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization' always;  # 允许的请求头
+
+               # OPTIONS请求特殊处理
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;  # 预检请求缓存时间
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            add_header 'Content-Length' 0;
+            return 204;  # 返回无内容状态码
+        }
+    }
+}                                                                                                                                                                                              
+```
+
+创建符号链接：
+```bash
+sudo ln -s /etc/nginx/sites-available/rating_system /etc/nginx/sites-enabled
 sudo nginx -t
-
-# nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-# nginx: configuration file /etc/nginx/nginx.conf test is successful
-
-
-# 重启 Nginx
 sudo systemctl restart nginx
 ```
 
-7. **配置防火墙**
+### 8. 配置SSL证书
+
 ```bash
-# 开放必要端口
-sudo ufw allow 80
-sudo ufw allow 4262 # 端口开放注意腾讯云上的允许
-sudo ufw enable
+# 安装SSL证书
+sudo certbot --nginx -d your_domain.com
+
+# 自动续期证书
+sudo certbot renew --dry-run
 ```
 
-8. **修改小程序配置**
-```bash
-# 修改小程序的服务器地址
-# 编辑 miniprogram-1/utils/request.js 文件
-vim miniprogram-1/utils/request.js
+### 9. 文件权限设置
 
-# 修改 BASE_URL 为
-const BASE_URL = 'http://服务器IP:4262/api';
-```
-
-9. **初始化数据库**
-```bash
-# 在远程服务器上执行
-mysql -u rating_user -p rating_system < rating_system.sql
-```
-
-10. **验证部署**
-```bash
-# 检查服务状态
-sudo systemctl status rating_system
-sudo systemctl status nginx
-
-# 检查日志
-sudo journalctl -u rating_system
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
-```
-
-11. **访问测试**
-- 在浏览器访问 `http://服务器IP:4262` 应该能看到管理后台登录界面
-- 默认管理员账号：
-  - 用户名：admin
-  - 密码：admin123
-
-12. **小程序配置**
-- 在微信开发者工具中：
-  - 点击右上角【详情】
-  - 在【本地设置】中勾选【不校验合法域名...】选项
-  - 这样可以在开发阶段使用 IP 地址
-
-13. **数据初始化**
-- 登录管理后台
-- 创建分组
-- 上传评委和成员数据（使用 Excel 模板）
-
-14. **常见问题处理**
-- 如果访问出现 502 错误：
-  ```bash
-  # 检查 gunicorn 日志
-  sudo journalctl -u rating_system
-  
-  # 检查应用权限
-  sudo chown -R ubuntu:ubuntu /var/www/rating_system
-  ```
-
-- 如果数据库连接失败：
-  ```bash
-  # 检查 MySQL 状态
-  sudo systemctl status mysql
-  
-  # 检查数据库连接
-  mysql -u rating_user -p
-  ```
-
-15. **安全建议**
 ```bash
 # 设置目录权限
-sudo chown -R ubuntu:ubuntu /var/www/rating_system
+sudo chown -R www-data:www-data /var/www/rating_system
 sudo chmod -R 755 /var/www/rating_system
-sudo chmod 600 /var/www/rating_system/.env
-
-# 定期备份数据库
-mysqldump -u rating_user -p rating_system > backup.sql
 ```
 
-如果遇到任何问题，可以查看相应的日志文件进行排查。
+## 问题总结与解决方案
 
+### 1. 跨域问题
+- 问题：小程序端无法访问后端API
+- 解决：使用Flask-CORS处理跨域请求，并正确配置允许的域名和方法
 
-## 使用说明
+### 2. 并发评分问题
+- 问题：多个评委同时评分可能导致数据不一致
+- 解决：使用数据库事务和唯一约束确保评分数据的一致性
 
-### 1. 管理员后台
+### 3. Excel导入导出问题
+- 问题：大量数据导入导出时内存占用过高
+- 解决：使用pandas的chunk功能分批处理数据，并使用BytesIO处理文件流
 
-#### 登录系统
-- 访问 `http://您的服务器IP:4262`
-- 默认管理员账号：admin
-- 默认密码：admin123
+### 4. 用户认证问题
+- 问题：Web端和小程序端需要不同的认证机制
+- 解决：Web端使用Flask-Login，小程序端使用JWT令牌
 
-#### 初始化数据
-1. 准备Excel文件
-   - 评委文件：包含 username, password, role, group_ids 列
-   - 成员文件：包含 exam_number, school_stage, subject, name, group_id, notes 列
+### 5. 数据统计性能问题
+- 问题：评分数据统计查询较慢
+- 解决：优化数据库索引，使用缓存机制
 
-2. 上传文件
-   - 登录后台
-   - 进入数据初始化页面
-   - 上传准备好的Excel文件
+### 6. 文件上传安全问题
+- 问题：文件上传可能带来安全隐患
+- 解决：严格限制文件类型，使用安全的文件名生成方式
 
-#### 数据导入说明
+## 维护建议
 
-##### 1. 评委数据导入
-评委数据Excel文件必须包含以下列：
-```
-username    - 用户名（必填）
-password    - 密码（必填）
-role        - 角色（必填，填写"judge"）
-group_ids   - 分组ID（必填，多个分组用英文逗号分隔，如"1,2,3"）
-```
-
-注意事项：
-- 所有必填字段不能为空
-- 用户名不能重复
-- role 字段必须填写 "judge"
-- group_ids 中的分组ID必须是已存在的分组
-- 如果某行数据不完整，该行将被跳过
-
-##### 2. 成员数据导入
-成员数据Excel文件必须包含以下列：
-```
-exam_number   - 考号（必填）
-name          - 姓名（必填）
-school_stage  - 学段（必填）
-subject       - 学科（必填）
-group_id      - 分组ID（必填）
-notes         - 备注（选填）
+1. 定期备份数据库
+```bash
+# 创建备份脚本
+#!/bin/bash
+backup_dir="/var/backups/rating_system"
+date_format=$(date +%Y%m%d_%H%M%S)
+mysqldump -u rating_user -p rating_system > "$backup_dir/backup_$date_format.sql"
 ```
 
-注意事项：
-- 除了notes外，其他字段都是必填的
-- 考号不能重复
-- group_id 必须是已存在的分组ID
-- notes 字段可以为空
-- 如果必填字段为空，该行将被跳过
-- Excel中的空值(NaN)会被自动转换为空字符串
+2. 监控系统日志
+```bash
+# 检查应用日志
+tail -f /var/www/rating_system/logs/flask_app.log
 
-##### 3. 导入步骤
-1. 下载模板
-   - 点击"下载评委模板"或"下载成员模板"
-   - 使用模板填写数据
+# 检查Nginx日志
+tail -f /var/log/nginx/error.log
+```
 
-2. 准备数据
-   - 按照模板格式填写数据
-   - 确保必填字段完整
-   - 保存为Excel格式（.xlsx）
+3. 定期更新依赖包
+```bash
+pip install --upgrade -r requirements.txt
+```
 
-3. 上传文件
-   - 登录管理员后台
-   - ��入"数据初始化"页面
-   - 选择评委文件和成员文件
-   - 点击"开始初始化"
+## 技术栈
 
-4. 确认结果
-   - 系统会显示导入成功的记录数
-   - 显示跳过的无效记录数
-   - 如果有错误会显示具体原因
+- 后端：Python Flask
 
-##### 4. 注意事项
-1. 数据初始化会清除：
-   - 所有评分记录
-   - 所有成员数据
-   - 所有评委用户（管理员账号保留）
-   - 评委与分组的关联关系
+- 数据库：MySQL
 
-2. 不会清除：
-   - 管理员账号
-   - 分组信息
+- 前端：微信小程序
 
-3. 建议在初始化前：
-   - 备份重要数据
-   - 确认分组已创建
-   - 仔细核对Excel文件内容
+- Web端：Bootstrap + jQuery
 
-#### 日常管理
-- 用户管理：添加/编辑评委账号
-- 分组管理：创建/编辑评分分组
-- 成员管理：添加/编辑待评分成员
-- 数据导出：导出评分结果
+- 服务器：Nginx + Gunicorn
 
-### 2. 评委小程序
+  
 
-#### 登录
-- 打开小程序
-- 输入评委账号密码
-- 登录系统
+## 贡献者
 
-#### 评分操作
-1. 查看分组
-   - 登录后显示可评分的分组
-   - 显示每个分组的评分进度
+- 后端开发：[o1]
+- 前端开发：[Cursor]
+- 项目管理：[Bobo]
 
-2. 评分
-   - 选择分组进入成员列表
-   - 点击成员进入评分界面
-   - 输入分数（0-100）
-   - 提交评分
+## 许可证
+
+MIT License
 
 
 
